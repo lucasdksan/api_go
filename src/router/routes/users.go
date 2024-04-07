@@ -27,13 +27,13 @@ var user_Routes = []Routes{
 	{
 		URI:                     "/users/{id}",
 		Method:                  http.MethodPut,
-		Functionality:           controllers.Update_Users,
+		Functionality:           controllers.Update_User,
 		Requires_authentication: false,
 	},
 	{
 		URI:                     "/users/{id}",
 		Method:                  http.MethodDelete,
-		Functionality:           controllers.Delete_Users,
+		Functionality:           controllers.Delete_User,
 		Requires_authentication: false,
 	},
 }

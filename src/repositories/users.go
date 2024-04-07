@@ -49,6 +49,34 @@ func (repository Users) Get(identifier string) ([]models.User, error) {
 	return users, nil
 }
 
+func (repository Users) Get_for_id(user_id uint64) (models.User, error) {
+	var user models.User
+	lines, err := repository.db.Query(
+		"select id, name, nick, email, createAt from users where id ?",
+		user_id,
+	)
+
+	if err != nil {
+		return models.User{}, err
+	}
+
+	defer lines.Close()
+
+	if lines.Next() {
+		if err = lines.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Nick,
+			&user.Email,
+			&user.CreateAt,
+		); err != nil {
+			return models.User{}, err
+		}
+	}
+
+	return user, nil
+}
+
 func (repository Users) Create(user models.User) (uint64, error) {
 	statement, err := repository.db.Prepare(
 		"insert into users (name, nick, email, password) values(?, ?, ?, ?)",
@@ -73,4 +101,41 @@ func (repository Users) Create(user models.User) (uint64, error) {
 	}
 
 	return uint64(last_id_insert), nil
+}
+
+func (repository Users) Update(user_id uint64, user models.User) error {
+	statement, err := repository.db.Prepare("update users set name = ?, nick = ?, email = ? where id = ?")
+
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	if _, err := statement.Exec(
+		user.Name,
+		user.Nick,
+		user.Email,
+		user_id,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repository Users) Delete(user_id uint64) error {
+	statement, err := repository.db.Prepare("delete from users where id = ?")
+
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	if _, err := statement.Exec(user_id); err != nil {
+		return err
+	}
+
+	return nil
 }
