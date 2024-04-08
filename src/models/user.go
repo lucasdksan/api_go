@@ -1,9 +1,12 @@
 package models
 
 import (
+	"api/src/security"
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/badoux/checkmail"
 )
 
 type User struct {
@@ -20,7 +23,9 @@ func (u *User) User_init(state string) error {
 		return err
 	}
 
-	u.format()
+	if err := u.format(state); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -34,6 +39,10 @@ func (u *User) validate(state string) error {
 		return errors.New("o e-mail eh obrigatorio e nao pode estar em branco")
 	}
 
+	if err := checkmail.ValidateFormat(u.Email); err != nil {
+		return errors.New("o e-mail possui um formato invalido")
+	}
+
 	if u.Nick == "" {
 		return errors.New("o nick eh obrigatorio e nao pode estar em branco")
 	}
@@ -45,8 +54,20 @@ func (u *User) validate(state string) error {
 	return nil
 }
 
-func (u *User) format() {
+func (u *User) format(state string) error {
 	u.Name = strings.TrimSpace(u.Name)
 	u.Nick = strings.TrimSpace(u.Nick)
 	u.Email = strings.TrimSpace(u.Email)
+
+	if state == "register" {
+		pass_hash, err := security.Hash(u.Password)
+
+		if err != nil {
+			return err
+		}
+
+		u.Password = string(pass_hash)
+	}
+
+	return nil
 }
