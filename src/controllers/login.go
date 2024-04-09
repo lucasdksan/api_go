@@ -49,7 +49,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, _ := authentication.Create_token(user_exist_db.ID)
+	token, err := authentication.Create_token(user_exist_db.ID)
+
+	if err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	fmt.Println("Token: ", token)
 	w.Write([]byte("Parabens voce esta logado!"))
 }

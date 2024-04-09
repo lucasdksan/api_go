@@ -12,6 +12,7 @@ import (
 var (
 	Bank_connection_string = ""
 	Port                   = 0
+	Secret_key             []byte
 )
 
 func LoadingEnv() {
@@ -32,4 +33,6 @@ func LoadingEnv() {
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
+
+	Secret_key = []byte(os.Getenv("SECRET_KEY"))
 }
