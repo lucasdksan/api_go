@@ -52,7 +52,7 @@ func (repository Users) Get(identifier string) ([]models.User, error) {
 func (repository Users) Get_for_id(user_id uint64) (models.User, error) {
 	var user models.User
 	lines, err := repository.db.Query(
-		"select id, name, nick, email, createAt from users where id ?",
+		"select id, name, nick, email, createAt from users where id = ?",
 		user_id,
 	)
 

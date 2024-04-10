@@ -56,6 +56,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Token: ", token)
-	w.Write([]byte("Parabens voce esta logado!"))
+	fmt.Println("Vc esta logado")
+	w.Write([]byte(token))
 }

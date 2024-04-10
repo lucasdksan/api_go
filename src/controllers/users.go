@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"api/src/authentication"
 	"api/src/db"
 	"api/src/models"
 	"api/src/repositories"
 	"api/src/responses"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -117,6 +119,18 @@ func Update_User(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user_id_token, err := authentication.Extract_user_id(r)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if user_id != user_id_token {
+		responses.ERR(w, http.StatusForbidden, errors.New("nao eh possivel fazer essa alteracao"))
+		return
+	}
+
 	request_body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
@@ -159,6 +173,18 @@ func Delete_User(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	user_id_token, err := authentication.Extract_user_id(r)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if user_id != user_id_token {
+		responses.ERR(w, http.StatusForbidden, errors.New("nao eh possivel fazer essa remocao"))
 		return
 	}
 
