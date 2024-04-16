@@ -8,7 +8,6 @@ import (
 	"api/src/responses"
 	"api/src/security"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -56,6 +55,5 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Vc esta logado")
 	w.Write([]byte(token))
 }

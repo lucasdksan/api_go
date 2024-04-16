@@ -179,3 +179,55 @@ func (repository Users) Follow(follower_id, user_id uint64) error {
 
 	return nil
 }
+
+func (repository Users) Un_follow(user_id, follower_id uint64) error {
+	statement, err := repository.db.Prepare(
+		"delete from followers where user_id = ? and follower_id = ?",
+	)
+
+	if err != nil {
+		return err
+	}
+
+	statement.Close()
+
+	if _, err = statement.Exec(user_id, follower_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repository Users) Get_followers(user_id uint64) ([]models.User, error) {
+	lines, err := repository.db.Query(
+		`select u.id, u.name, u.nick, u.email, u.createAt
+		from users u inner join followers s on u.id = s.follower_id where s.user_id = ?
+		`, user_id,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer lines.Close()
+
+	var followers []models.User
+
+	for lines.Next() {
+		var follower models.User
+
+		if err := lines.Scan(
+			&follower.ID,
+			&follower.Name,
+			&follower.Nick,
+			&follower.Email,
+			&follower.CreateAt,
+		); err != nil {
+			return nil, err
+		}
+
+		followers = append(followers, follower)
+	}
+
+	return followers, nil
+}

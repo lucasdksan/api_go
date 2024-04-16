@@ -246,3 +246,71 @@ func Follow_user(w http.ResponseWriter, r *http.Request) {
 
 	responses.JSON(w, http.StatusNoContent, nil)
 }
+
+func Un_follow_user(w http.ResponseWriter, r *http.Request) {
+	follower_id, err := authentication.Extract_user_id(r)
+	params := mux.Vars(r)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	user_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if follower_id == user_id {
+		responses.ERR(w, http.StatusForbidden, errors.New("não é possível seguir a si proprío"))
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_user(db)
+
+	if err := repository.Un_follow(user_id, follower_id); err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}
+
+func Get_Followers(w http.ResponseWriter, r *http.Request) {
+	user_id, err := authentication.Extract_user_id(r)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_user(db)
+	followers, err := repository.Get_followers(user_id)
+
+	if err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, followers)
+}
