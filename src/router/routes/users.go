@@ -54,4 +54,16 @@ var user_Routes = []Routes{
 		Functionality:           controllers.Get_Followers,
 		Requires_authentication: true,
 	},
+	{
+		URI:                     "/users/{id}/following",
+		Method:                  http.MethodGet,
+		Functionality:           controllers.Search_Following,
+		Requires_authentication: true,
+	},
+	{
+		URI:                     "/users/{id}/update-password",
+		Method:                  http.MethodPost,
+		Functionality:           controllers.Update_Password,
+		Requires_authentication: true,
+	},
 }

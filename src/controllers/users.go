@@ -6,6 +6,7 @@ import (
 	"api/src/models"
 	"api/src/repositories"
 	"api/src/responses"
+	"api/src/security"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -288,17 +289,18 @@ func Un_follow_user(w http.ResponseWriter, r *http.Request) {
 }
 
 func Get_Followers(w http.ResponseWriter, r *http.Request) {
-	user_id, err := authentication.Extract_user_id(r)
+	params := mux.Vars(r)
+	user_id, err := strconv.ParseUint(params["id"], 10, 64)
 
 	if err != nil {
-		responses.ERR(w, http.StatusUnauthorized, err)
+		responses.ERR(w, http.StatusBadRequest, err)
 		return
 	}
 
 	db, err := db.Connection_db()
 
 	if err != nil {
-		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		responses.ERR(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -313,4 +315,100 @@ func Get_Followers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.JSON(w, http.StatusOK, followers)
+}
+
+func Search_Following(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	user_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_user(db)
+	users, err := repository.Search_Following(user_id)
+
+	if err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, users)
+}
+
+func Update_Password(w http.ResponseWriter, r *http.Request) {
+	user_id_token, err := authentication.Extract_user_id(r)
+	params := mux.Vars(r)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	user_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if user_id != user_id_token {
+		responses.ERR(w, http.StatusForbidden, errors.New("nao eh possivel atualizar a senha de uma conta que nao eh sua"))
+		return
+	}
+
+	body_request, err := ioutil.ReadAll(r.Body)
+
+	var pass models.Pass
+
+	if err = json.Unmarshal(body_request, &pass); err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_user(db)
+	pass_in_db, err := repository.Get_Pass(user_id)
+
+	if err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err = security.VerifyPassword(pass_in_db, pass.CurrentPass); err != nil {
+		responses.ERR(w, http.StatusUnauthorized, errors.New("a senha atual não condiz com a que está salva o banco"))
+		return
+	}
+
+	pass_with_hash, err := security.Hash(pass.NewPass)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err = repository.Update_Pass(string(pass_with_hash), user_id); err != nil {
+		responses.ERR(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
 }

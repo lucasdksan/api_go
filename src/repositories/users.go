@@ -189,7 +189,7 @@ func (repository Users) Un_follow(user_id, follower_id uint64) error {
 		return err
 	}
 
-	statement.Close()
+	defer statement.Close()
 
 	if _, err = statement.Exec(user_id, follower_id); err != nil {
 		return err
@@ -230,4 +230,75 @@ func (repository Users) Get_followers(user_id uint64) ([]models.User, error) {
 	}
 
 	return followers, nil
+}
+
+func (repository Users) Search_Following(user_id uint64) ([]models.User, error) {
+	lines, err := repository.db.Query(`
+		select u.id, u.name, u.nick, u.email, u.createAt
+		from users u inner join followers s on u.id = s.user_id where s.follower_id = ?
+	`, user_id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer lines.Close()
+
+	var users []models.User
+
+	for lines.Next() {
+		var user models.User
+
+		if err := lines.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Nick,
+			&user.Email,
+			&user.CreateAt,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+func (repository Users) Get_Pass(user_id uint64) (string, error) {
+	line, err := repository.db.Query(`select password from users where id = ?`, user_id)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer line.Close()
+
+	var user models.User
+
+	if line.Next() {
+		if err := line.Scan(&user.Password); err != nil {
+			return "", err
+		}
+	}
+
+	return user.Password, nil
+}
+
+func (repository Users) Update_Pass(pass string, user_id uint64) error {
+	statement, err := repository.db.Prepare(
+		"update users set password = ? where id = ?",
+	)
+
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	if _, err = statement.Exec(pass, user_id); err != nil {
+		return err
+	}
+
+	return nil
 }
