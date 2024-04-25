@@ -15,7 +15,7 @@ type User struct {
 	Nick     string    `json:"nick,omitempty"`
 	Email    string    `json:"email,omitempty"`
 	Password string    `json:"password,omitempty"`
-	CreateAt time.Time `json:"CreateAt,omitempty"`
+	CreateAt time.Time `json:"createAt,omitempty"`
 }
 
 func (u *User) User_init(state string) error {
