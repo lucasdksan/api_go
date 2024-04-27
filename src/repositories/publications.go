@@ -126,3 +126,94 @@ func (repository Publications) Update(publication_id uint64, publication models.
 
 	return nil
 }
+
+func (repository Publications) Delete(publication_id uint64) error {
+	statement, err := repository.db.Prepare(
+		"delete from publications where id = ?",
+	)
+
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	if _, err = statement.Exec(publication_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repository Publications) Get_for_User(user_id uint64) ([]models.Publications, error) {
+	lines, err := repository.db.Query(`
+		select p.*, u.nick from publications p
+		join users u on u.id = p.author_id
+		where p.author_id = ?
+	`, user_id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer lines.Close()
+
+	var publications []models.Publications
+
+	for lines.Next() {
+		var publication models.Publications
+
+		if err = lines.Scan(
+			&publication.ID,
+			&publication.Title,
+			&publication.Content,
+			&publication.AuthorID,
+			&publication.Likes,
+			&publication.CreateAt,
+			&publication.AuthorNick,
+		); err != nil {
+			return nil, err
+		}
+
+		publications = append(publications, publication)
+	}
+
+	return publications, nil
+}
+
+func (repository Publications) Like(publication_id uint64) error {
+	statement, err := repository.db.Prepare("update publications set likes = likes + 1 where id = ?")
+
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	if _, err = statement.Exec(publication_id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repository Publications) Dislike(publication_id uint64) error {
+	statement, err := repository.db.Prepare(`
+		update publications set likes = 
+		CASE WHEN likes > 0 THEN likes - 1
+		ELSE likes END
+		where id = ?
+	`)
+
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	if _, err = statement.Exec(publication_id); err != nil {
+		return err
+	}
+
+	return nil
+}

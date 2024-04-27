@@ -187,5 +187,132 @@ func Update_Publication(w http.ResponseWriter, r *http.Request) {
 }
 
 func Delete_Publication(w http.ResponseWriter, r *http.Request) {
+	user_id_token, err := authentication.Extract_user_id(r)
+	params := mux.Vars(r)
 
+	if err != nil {
+		responses.ERR(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	publication_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_publication(db)
+	publication_in_db, err := repository.Get_for_id(publication_id)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if publication_in_db.AuthorID != user_id_token {
+		responses.ERR(w, http.StatusForbidden, errors.New("não é possível atualizar um post que não seja sua"))
+		return
+	}
+
+	if err = repository.Delete(publication_id); err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}
+
+func Search_Posts_From_User(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	user_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_publication(db)
+	publications, err := repository.Get_for_User(user_id)
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, publications)
+}
+
+func Like_Post(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	publication_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_publication(db)
+
+	if err := repository.Like(publication_id); err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}
+
+func Dislike_Post(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	publication_id, err := strconv.ParseUint(params["id"], 10, 64)
+
+	if err != nil {
+		responses.ERR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connection_db()
+
+	if err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	defer db.Close()
+
+	repository := repositories.New_repository_publication(db)
+
+	if err := repository.Dislike(publication_id); err != nil {
+		responses.ERR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
 }
