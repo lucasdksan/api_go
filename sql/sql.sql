@@ -31,10 +31,10 @@ CREATE TABLE followers(
 CREATE TABLE publications(
     id int auto_increment primary key,
     title varchar(50) not null,
-    author_id int not null,
     content varchar(300) not null,
-    user_id int not null,
-    FOREIGN KEY (user_id)
+    author_id int not null,
+    
+    FOREIGN KEY (author_id)
     REFERENCES users(id)
     ON DELETE CASCADE,
 

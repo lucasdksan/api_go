@@ -10,3 +10,10 @@ VALUES
 (1,2),
 (3,2),
 (4,1);
+
+insert into publications(title, content, author_id)
+values
+("Publication user 1", "This is a simple post from user 1", 1),
+("Publication user 2", "This is a simple post from user 2", 2),
+("Publication user 3", "This is a simple post from user 3", 3),
+("Publication user 4", "This is a simple post from user 4", 4);

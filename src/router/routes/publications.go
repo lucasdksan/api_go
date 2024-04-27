@@ -13,7 +13,13 @@ var publications_routes = []Routes{
 		Requires_authentication: true,
 	},
 	{
-		URI:                     "/publication",
+		URI:                     "/publications",
+		Method:                  http.MethodGet,
+		Functionality:           controllers.Get_Publications,
+		Requires_authentication: true,
+	},
+	{
+		URI:                     "/publication/{id}",
 		Method:                  http.MethodGet,
 		Functionality:           controllers.Get_Publication,
 		Requires_authentication: true,
