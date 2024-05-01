@@ -10,7 +10,7 @@ type Publications struct {
 }
 
 func New_repository_publication(db *sql.DB) *Publications {
-	return &Publications{}
+	return &Publications{db}
 }
 
 func (repository Publications) Create(publication models.Publications) (uint64, error) {
